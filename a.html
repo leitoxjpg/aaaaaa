@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,16 +10,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.print.min.css" media="print" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <!-- Agregar la biblioteca de idioma en español de FullCalendar -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/es.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 
     <style>
         /* Estilos aquí */
     </style>
-    
+
 </head>
+
 <body>
     <header>
         <!-- Encabezado aquí -->
@@ -103,15 +103,15 @@
                     // Limpiar la última selección al deseleccionar
                     lastSelection = null;
                 },
-                minTime: '11:00:00',  // Hora de inicio
-                maxTime: '21:00:00',  // Hora de fin (actualizado a las 9pm)
-                slotDuration: '01:00:00',  // Intervalo de tiempo por hora
+                minTime: '11:00:00', // Hora de inicio
+                maxTime: '21:00:00', // Hora de fin (actualizado a las 9pm)
+                slotDuration: '01:00:00', // Intervalo de tiempo por hora
                 businessHours: {
                     dow: [1, 2, 3, 4, 5, 6, 0], // Lunes a Domingo
                     start: '11:00', // Hora de inicio
                     end: '21:00' // Hora de fin
                 },
-                events: storedReservas,  // Mostrar las reservas almacenadas al cargar el calendario
+                events: storedReservas, // Mostrar las reservas almacenadas al cargar el calendario
                 eventClick: function(calEvent, jsEvent, view) {
                     // Lógica para manejar el clic en un evento del calendario
                     if (esAdministrador()) {
@@ -211,7 +211,8 @@
                 if (result.isConfirmed) {
                     // Elimina la reserva del arreglo y actualiza el calendario
                     var storedReservas = JSON.parse(localStorage.getItem('reservas')) || [];
-                    storedReservas = storedReservas.filter(reserva => !(moment(reserva.start).isSame(calEvent.start) && moment(reserva.end).isSame(calEvent.end)));
+                    storedReservas = storedReservas.filter(reserva => reserva.start && reserva.start.isSame && reserva.end.isSame &&
+                        !(reserva.start.isSame(calEvent.start) && reserva.end.isSame(calEvent.end)));
                     localStorage.setItem('reservas', JSON.stringify(storedReservas));
                     $('#calendario').fullCalendar('removeEvents', calEvent._id);
                     Swal.fire('Reserva eliminada', '', 'success');
@@ -245,4 +246,5 @@
         }
     </script>
 </body>
+
 </html>
