@@ -33,7 +33,6 @@
         const filePath = 'reservas.json';
         const accessToken = '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';
 
-        // Función para cargar reservas desde GitHub
         function cargarReservasDesdeGitHub(callback) {
             const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
 
@@ -53,7 +52,6 @@
             });
         }
 
-        // Función para guardar reservas en GitHub
         function guardarReservasEnGitHub(reservas, callback) {
             const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
 
@@ -62,7 +60,7 @@
             const data = {
                 message: 'Actualizar reservas',
                 content: content,
-                sha: reservas.sha, // Incluir el sha actual del archivo
+                sha: reservas.sha,
             };
 
             $.ajax({
@@ -216,10 +214,7 @@
         }
 
         function esAdministrador() {
-            // Implementa tu lógica para verificar si el usuario es administrador
-            // Por ejemplo, puedes agregar un campo 'administrador' en el objeto de usuario
-            // y verificar su valor aquí.
-            return true;
+            return true; // Implementa tu lógica para determinar si el usuario es administrador
         }
     </script>
 </body>
