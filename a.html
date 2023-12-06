@@ -98,6 +98,7 @@
             Swal.fire({
                 title: 'Reserva de Hora',
                 html: `
+                    <p>Seleccionaste la hora: ${start.format('HH:mm')}</p>
                     <label for="nombre">Nombre:</label>
                     <input type="text" id="nombre" placeholder="Tu nombre" class="swal2-input">
                     <br>
@@ -140,7 +141,8 @@
                         telefono: telefono
                     }, true);
 
-                    alert('¡Reserva confirmada para ' + nombre + '!');
+                    // Mostrar mensaje con la hora seleccionada
+                    Swal.fire('¡Reserva confirmada!', `Hora reservada para ${nombre} a las ${start.format('HH:mm')}.`, 'success');
                 } else {
                     // Si el usuario cancela, evita la selección
                     $('#calendario').fullCalendar('unselect');
@@ -150,7 +152,6 @@
     </script>   
 </body>
 </html>
-
 
 
 
