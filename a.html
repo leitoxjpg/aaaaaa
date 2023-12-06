@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reserva de Horas</title>
-    <!-- Incluye FullCalendar CSS y JS en el head -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.print.min.css" media="print" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -20,14 +19,6 @@
 </head>
 
 <body>
-    <header>
-        <!-- Encabezado aquí -->
-    </header>
-
-    <nav>
-        <!-- Navegación aquí -->
-    </nav>
-
     <section id="reserva">
         <h2>Reserva tu hora</h2>
         <p>Selecciona una hora en el calendario para reservar:</p>
@@ -36,100 +27,112 @@
         <div id="calendario"></div>
     </section>
 
-    <section id="nosotros">
-        <!-- Contenido de la sección "Nosotros" -->
-    </section>
-
-    <section id="contacto">
-        <!-- Contenido de la sección de contacto -->
-    </section>
-
-    <section id="login">
-        <h2>Iniciar sesión como administrador</h2>
-        <form id="loginForm">
-            <label for="username">Usuario:</label>
-            <input type="text" id="username" placeholder="Nombre de usuario" required>
-
-            <label for="password">Contraseña:</label>
-            <input type="password" id="password" placeholder="Contraseña" required>
-
-            <button type="button" onclick="iniciarSesion()">Iniciar sesión</button>
-        </form>
-    </section>
-
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Establecer el idioma en español
-            moment.locale('es');
+        const repoOwner = 'leitoxjpg';
+        const repoName = 'aaaaaa';
+        const filePath = 'reservas.json';
+        const accessToken = 'https://leitoxjpg.github.io/aaaaaa/a.html';
 
-            // Variable para almacenar la última selección
+        // Función para cargar reservas desde GitHub
+        function cargarReservasDesdeGitHub(callback) {
+            const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
+
+            $.ajax({
+                url: url,
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                success: function (data) {
+                    const content = atob(data.content);
+                    const reservas = JSON.parse(content);
+                    callback(reservas);
+                },
+                error: function (error) {
+                    console.error('Error al cargar reservas desde GitHub:', error);
+                },
+            });
+        }
+
+        // Función para guardar reservas en GitHub
+        function guardarReservasEnGitHub(reservas, callback) {
+            const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
+
+            const content = btoa(JSON.stringify(reservas));
+
+            const data = {
+                message: 'Actualizar reservas',
+                content: content,
+                sha: reservas.sha, // Incluir el sha actual del archivo
+            };
+
+            $.ajax({
+                url: url,
+                type: 'PUT',
+                data: JSON.stringify(data),
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                success: function (response) {
+                    callback(response);
+                },
+                error: function (error) {
+                    console.error('Error al guardar reservas en GitHub:', error);
+                },
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            moment.locale('es');
             var lastSelection = null;
 
-            // Obtener las reservas guardadas en almacenamiento local al cargar la página
-            var storedReservas = JSON.parse(localStorage.getItem('reservas')) || [];
-
-            $('#calendario').fullCalendar({
-                // Configuración de FullCalendar aquí
-                header: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'agendaWeek,agendaDay'
-                },
-                defaultView: 'agendaWeek',
-                selectable: true,
-                selectHelper: true, // Resalta la selección
-                unselectAuto: false, // No deselecciona automáticamente
-                selectLongPressDelay: 10, // Establecer el tiempo de retardo para dispositivos táctiles
-                select: function(start, end, jsEvent, view) {
-                    // Muestra el formulario de reserva solo si es el administrador
-                    if (esAdministrador()) {
-                        // Verifica si la nueva selección se superpone con la anterior
-                        if (lastSelection && start.isSameOrAfter(lastSelection.start) && start.isBefore(lastSelection.end)) {
-                            // Evita la selección si se superpone
-                            $('#calendario').fullCalendar('unselect');
-                            alert('No puedes seleccionar dos horas consecutivas.');
+            cargarReservasDesdeGitHub(function (storedReservas) {
+                $('#calendario').fullCalendar({
+                    header: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'agendaWeek,agendaDay'
+                    },
+                    defaultView: 'agendaWeek',
+                    selectable: true,
+                    selectHelper: true,
+                    unselectAuto: false,
+                    selectLongPressDelay: 10,
+                    select: function (start, end, jsEvent, view) {
+                        if (esAdministrador()) {
+                            if (lastSelection && start.isSameOrAfter(lastSelection.start) && start.isBefore(lastSelection.end)) {
+                                $('#calendario').fullCalendar('unselect');
+                                alert('No puedes seleccionar dos horas consecutivas.');
+                            } else {
+                                lastSelection = { start: start, end: end };
+                                mostrarFormularioReserva(start, end);
+                            }
                         } else {
-                            // Almacena la nueva selección como la última
-                            lastSelection = { start: start, end: end };
-                            mostrarFormularioReserva(start, end);
+                            $('#calendario').fullCalendar('unselect');
+                            alert('Solo el administrador puede ocupar toda la jornada.');
                         }
-                    } else {
-                        // Si no es el administrador, evita la selección
-                        $('#calendario').fullCalendar('unselect');
-                        alert('Solo el administrador puede ocupar toda la jornada.');
-                    }
-                },
-                unselect: function(view, jsEvent) {
-                    // Limpiar la última selección al deseleccionar
-                    lastSelection = null;
-                },
-                minTime: '11:00:00', // Hora de inicio
-                maxTime: '21:00:00', // Hora de fin (actualizado a las 9pm)
-                slotDuration: '01:00:00', // Intervalo de tiempo por hora
-                businessHours: {
-                    dow: [1, 2, 3, 4, 5, 6, 0], // Lunes a Domingo
-                    start: '11:00', // Hora de inicio
-                    end: '21:00' // Hora de fin
-                },
-                events: storedReservas, // Mostrar las reservas almacenadas al cargar el calendario
-                eventClick: function(calEvent, jsEvent, view) {
-                    // Lógica para manejar el clic en un evento del calendario
-                    if (esAdministrador()) {
-                        eliminarReserva(calEvent);
-                    }
-                },
+                    },
+                    unselect: function (view, jsEvent) {
+                        lastSelection = null;
+                    },
+                    minTime: '11:00:00',
+                    maxTime: '21:00:00',
+                    slotDuration: '01:00:00',
+                    businessHours: {
+                        dow: [1, 2, 3, 4, 5, 6, 0],
+                        start: '11:00',
+                        end: '21:00'
+                    },
+                    events: storedReservas,
+                    eventClick: function (calEvent, jsEvent, view) {
+                        if (esAdministrador()) {
+                            eliminarReserva(calEvent);
+                        }
+                    },
+                });
             });
         });
 
-        function esAdministrador() {
-            // Lógica para determinar si el usuario es administrador
-            // Aquí puedes implementar tu propia lógica, por ejemplo, verificar roles, privilegios, etc.
-            // En este ejemplo, siempre se considera al usuario como administrador
-            return true;
-        }
-
         function mostrarFormularioReserva(start, end) {
-            // Muestra el cuadro de diálogo modal con el formulario de reserva
             Swal.fire({
                 title: 'Reserva de Hora',
                 html: `
@@ -146,11 +149,9 @@
                 showCancelButton: true,
                 confirmButtonText: 'Confirmar Reserva',
                 preConfirm: () => {
-                    // Validar que todos los campos estén completos antes de confirmar
                     if (!$('#nombre').val() || !$('#email').val() || !$('#telefono').val()) {
                         Swal.showValidationMessage('Todos los campos son obligatorios');
                     } else {
-                        // Devuelve los valores ingresados por el usuario
                         return {
                             nombre: $('#nombre').val(),
                             email: $('#email').val(),
@@ -160,89 +161,65 @@
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Lógica de confirmación de reserva aquí
                     var nombre = result.value.nombre;
                     var email = result.value.email;
                     var telefono = result.value.telefono;
 
-                    // Puedes realizar acciones con la información ingresada por el usuario (enviar a un servidor, almacenar en una base de datos, etc.)
+                    cargarReservasDesdeGitHub(function (storedReservas) {
+                        var nuevaReserva = {
+                            title: 'Reservado por ' + nombre,
+                            start: start,
+                            end: end,
+                            email: email,
+                            telefono: telefono
+                        };
 
-                    // Agregar la reserva al arreglo de reservas almacenadas
-                    var nuevaReserva = {
-                        title: 'Reservado por ' + nombre,
-                        start: start,
-                        end: end,
-                        email: email,
-                        telefono: telefono
-                    };
+                        storedReservas.push(nuevaReserva);
 
-                    // Obtener las reservas almacenadas
-                    var storedReservas = JSON.parse(localStorage.getItem('reservas')) || [];
-
-                    // Agregar la nueva reserva al arreglo
-                    storedReservas.push(nuevaReserva);
-
-                    // Almacenar el arreglo actualizado en localStorage
-                    localStorage.setItem('reservas', JSON.stringify(storedReservas));
-
-                    // Agregar el evento al calendario
-                    $('#calendario').fullCalendar('renderEvent', nuevaReserva, true);
-
-                    // Mostrar mensaje con la hora seleccionada
-                    Swal.fire('¡Reserva confirmada!', `Hora reservada para ${nombre} de ${start.format('HH:mm')} a ${end.format('HH:mm')}.`, 'success');
+                        guardarReservasEnGitHub(storedReservas, function () {
+                            $('#calendario').fullCalendar('renderEvent', nuevaReserva, true);
+                            Swal.fire('¡Reserva confirmada!', `Hora reservada para ${nombre} de ${start.format('HH:mm')} a ${end.format('HH:mm')}.`, 'success');
+                        });
+                    });
                 } else {
-                    // Si el usuario cancela, evita la selección
                     $('#calendario').fullCalendar('unselect');
                 }
             });
         }
 
         function eliminarReserva(calEvent) {
-            // Muestra un cuadro de confirmación antes de eliminar la reserva
-            Swal.fire({
-                title: '¿Eliminar Reserva?',
-                text: `¿Estás seguro de eliminar la reserva de ${calEvent.title} de ${calEvent.start.format('HH:mm')} a ${calEvent.end.format('HH:mm')}?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Sí, eliminar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Elimina la reserva del arreglo y actualiza el calendario
-                    var storedReservas = JSON.parse(localStorage.getItem('reservas')) || [];
-                    storedReservas = storedReservas.filter(reserva => reserva.start && reserva.start.isSame && reserva.end.isSame &&
-                        !(reserva.start.isSame(calEvent.start) && reserva.end.isSame(calEvent.end)));
-                    localStorage.setItem('reservas', JSON.stringify(storedReservas));
-                    $('#calendario').fullCalendar('removeEvents', calEvent._id);
-                    Swal.fire('Reserva eliminada', '', 'success');
-                }
-            });
-        }
+            if (esAdministrador()) {
+                Swal.fire({
+                    title: '¿Eliminar Reserva?',
+                    text: `¿Estás seguro de eliminar la reserva de ${calEvent.title} de ${calEvent.start.format('HH:mm')} a ${calEvent.end.format('HH:mm')}?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, eliminar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        cargarReservasDesdeGitHub(function (storedReservas) {
+                            storedReservas = storedReservas.filter(reserva => reserva.start && reserva.start.isSame && reserva.end.isSame &&
+                                !(reserva.start.isSame(calEvent.start) && reserva.end.isSame(calEvent.end)));
 
-        function iniciarSesion() {
-            var username = document.getElementById('username').value;
-            var password = document.getElementById('password').value;
-
-            // Aquí puedes agregar lógica para validar el usuario y la contraseña
-            // Por ejemplo, comparar con valores predefinidos o hacer una solicitud al servidor
-
-            if (validarCredenciales(username, password)) {
-                // Lógica para cuando las credenciales son válidas
-                alert('Inicio de sesión exitoso como administrador');
-                // Puedes redirigir a una página de administrador o realizar otras acciones necesarias
+                            guardarReservasEnGitHub(storedReservas, function () {
+                                $('#calendario').fullCalendar('removeEvents', calEvent._id);
+                                Swal.fire('Reserva eliminada', '', 'success');
+                            });
+                        });
+                    }
+                });
             } else {
-                // Lógica para cuando las credenciales son inválidas
-                alert('Credenciales incorrectas. Por favor, inténtalo nuevamente.');
+                Swal.fire('Error', 'No tienes permisos para eliminar reservas.', 'error');
             }
         }
 
-        function validarCredenciales(username, password) {
-            // Lógica para validar las credenciales
-            // Aquí puedes implementar tu propia lógica de autenticación
-            // Por ejemplo, comparar con valores predefinidos o hacer una solicitud al servidor
-            // En este ejemplo, se asume que el usuario y la contraseña son "admin"
-            return username === 'admin' && password === 'admin';
+        function esAdministrador() {
+            // Implementa tu lógica para verificar si el usuario es administrador
+            // Por ejemplo, puedes agregar un campo 'administrador' en el objeto de usuario
+            // y verificar su valor aquí.
+            return true;
         }
     </script>
 </body>
