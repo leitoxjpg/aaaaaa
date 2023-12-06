@@ -44,9 +44,18 @@
         <!-- Contenido de la sección de contacto -->
     </section>
 
-    <footer>
-        <!-- Enlaces a redes sociales -->
-    </footer>
+    <section id="login">
+        <h2>Iniciar sesión como administrador</h2>
+        <form id="loginForm">
+            <label for="username">Usuario:</label>
+            <input type="text" id="username" placeholder="Nombre de usuario" required>
+
+            <label for="password">Contraseña:</label>
+            <input type="password" id="password" placeholder="Contraseña" required>
+
+            <button type="button" onclick="iniciarSesion()">Iniciar sesión</button>
+        </form>
+    </section>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -55,6 +64,9 @@
 
             // Variable para almacenar la última selección
             var lastSelection = null;
+
+            // Obtener las reservas guardadas en almacenamiento local al cargar la página
+            var storedReservas = JSON.parse(localStorage.getItem('reservas')) || [];
 
             $('#calendario').fullCalendar({
                 // Configuración de FullCalendar aquí
@@ -99,7 +111,13 @@
                     start: '11:00', // Hora de inicio
                     end: '21:00' // Hora de fin
                 },
-                // Puedes agregar eventos aquí si es necesario
+                events: storedReservas,  // Mostrar las reservas almacenadas al cargar el calendario
+                eventClick: function(calEvent, jsEvent, view) {
+                    // Lógica para manejar el clic en un evento del calendario
+                    if (esAdministrador()) {
+                        eliminarReserva(calEvent);
+                    }
+                },
             });
         });
 
@@ -148,15 +166,27 @@
                     var telefono = result.value.telefono;
 
                     // Puedes realizar acciones con la información ingresada por el usuario (enviar a un servidor, almacenar en una base de datos, etc.)
-                    
-                    // Agregar el evento al calendario
-                    $('#calendario').fullCalendar('renderEvent', {
+
+                    // Agregar la reserva al arreglo de reservas almacenadas
+                    var nuevaReserva = {
                         title: 'Reservado por ' + nombre,
                         start: start,
                         end: end,
                         email: email,
                         telefono: telefono
-                    }, true);
+                    };
+
+                    // Obtener las reservas almacenadas
+                    var storedReservas = JSON.parse(localStorage.getItem('reservas')) || [];
+
+                    // Agregar la nueva reserva al arreglo
+                    storedReservas.push(nuevaReserva);
+
+                    // Almacenar el arreglo actualizado en localStorage
+                    localStorage.setItem('reservas', JSON.stringify(storedReservas));
+
+                    // Agregar el evento al calendario
+                    $('#calendario').fullCalendar('renderEvent', nuevaReserva, true);
 
                     // Mostrar mensaje con la hora seleccionada
                     Swal.fire('¡Reserva confirmada!', `Hora reservada para ${nombre} de ${start.format('HH:mm')} a ${end.format('HH:mm')}.`, 'success');
@@ -166,6 +196,53 @@
                 }
             });
         }
-    </script>   
+
+        function eliminarReserva(calEvent) {
+            // Muestra un cuadro de confirmación antes de eliminar la reserva
+            Swal.fire({
+                title: '¿Eliminar Reserva?',
+                text: `¿Estás seguro de eliminar la reserva de ${calEvent.title} de ${calEvent.start.format('HH:mm')} a ${calEvent.end.format('HH:mm')}?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Elimina la reserva del arreglo y actualiza el calendario
+                    var storedReservas = JSON.parse(localStorage.getItem('reservas')) || [];
+                    storedReservas = storedReservas.filter(reserva => !(moment(reserva.start).isSame(calEvent.start) && moment(reserva.end).isSame(calEvent.end)));
+                    localStorage.setItem('reservas', JSON.stringify(storedReservas));
+                    $('#calendario').fullCalendar('removeEvents', calEvent._id);
+                    Swal.fire('Reserva eliminada', '', 'success');
+                }
+            });
+        }
+
+        function iniciarSesion() {
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
+
+            // Aquí puedes agregar lógica para validar el usuario y la contraseña
+            // Por ejemplo, comparar con valores predefinidos o hacer una solicitud al servidor
+
+            if (validarCredenciales(username, password)) {
+                // Lógica para cuando las credenciales son válidas
+                alert('Inicio de sesión exitoso como administrador');
+                // Puedes redirigir a una página de administrador o realizar otras acciones necesarias
+            } else {
+                // Lógica para cuando las credenciales son inválidas
+                alert('Credenciales incorrectas. Por favor, inténtalo nuevamente.');
+            }
+        }
+
+        function validarCredenciales(username, password) {
+            // Lógica para validar las credenciales
+            // Aquí puedes implementar tu propia lógica de autenticación
+            // Por ejemplo, comparar con valores predefinidos o hacer una solicitud al servidor
+            // En este ejemplo, se asume que el usuario y la contraseña son "admin"
+            return username === 'admin' && password === 'admin';
+        }
+    </script>
 </body>
 </html>
