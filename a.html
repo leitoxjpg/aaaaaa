@@ -6,6 +6,7 @@
     <title>Reserva de Horas</title>
     <!-- Incluye FullCalendar CSS y JS en el head -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.print.min.css" media="print" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <!-- Agregar la biblioteca de idioma en español de FullCalendar -->
@@ -61,6 +62,8 @@
                 },
                 defaultView: 'agendaWeek',
                 selectable: true,
+                selectHelper: true, // Resalta la selección
+                unselectAuto: false, // No deselecciona automáticamente
                 select: function(start, end, jsEvent, view) {
                     // Muestra el formulario de reserva solo si es el administrador
                     if (esAdministrador()) {
@@ -147,6 +150,8 @@
     </script>   
 </body>
 </html>
+
+
 
 
 
