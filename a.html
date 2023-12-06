@@ -53,6 +53,8 @@
             // Establecer el idioma en español
             moment.locale('es');
             
+            let lastSelection = null; // Para almacenar la última selección
+
             $('#calendario').fullCalendar({
                 // Configuración de FullCalendar aquí
                 header: {
@@ -64,15 +66,29 @@
                 selectable: true,
                 selectHelper: true, // Resalta la selección
                 unselectAuto: false, // No deselecciona automáticamente
+                selectLongPressDelay: 10, // Establecer el tiempo de retardo para dispositivos táctiles
                 select: function(start, end, jsEvent, view) {
-                    // Muestra el formulario de reserva solo si es el administrador
-                    if (esAdministrador()) {
-                        mostrarFormularioReserva(start, end);
-                    } else {
-                        // Si no es el administrador, evita la selección
+                    // Verificar si la selección es continua con la última selección
+                    if (lastSelection && (start - lastSelection === 0 || end - lastSelection === 0)) {
+                        // Si la selección es continua, evita la selección
                         $('#calendario').fullCalendar('unselect');
-                        alert('Solo el administrador puede ocupar toda la jornada.');
+                        alert('No puedes seleccionar dos horas consecutivas.');
+                    } else {
+                        // Almacenar la selección actual como la última selección
+                        lastSelection = start;
+                        // Muestra el formulario de reserva solo si es el administrador
+                        if (esAdministrador()) {
+                            mostrarFormularioReserva(start, end);
+                        } else {
+                            // Si no es el administrador, evita la selección
+                            $('#calendario').fullCalendar('unselect');
+                            alert('Solo el administrador puede ocupar toda la jornada.');
+                        }
                     }
+                },
+                unselect: function(view, jsEvent) {
+                    // Limpiar la última selección al deseleccionar
+                    lastSelection = null;
                 },
                 minTime: '11:00:00',  // Hora de inicio
                 maxTime: '21:00:00',  // Hora de fin (actualizado a las 9pm)
